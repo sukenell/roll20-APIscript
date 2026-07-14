@@ -1,0 +1,261 @@
+:root {
+  color: #1f262b;
+  background: #eef1f3;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  display: grid;
+  gap: 16px;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+  padding: 22px;
+}
+
+.app-header,
+.workspace {
+  margin: 0 auto;
+  max-width: 1440px;
+  width: 100%;
+}
+
+.app-header {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.eyebrow {
+  color: #5f6870;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.7rem;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.copy-status {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cfd7dd;
+  border-radius: 999px;
+  color: #2d5d48;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 800;
+  min-height: 36px;
+  min-width: 1px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.copy-status:empty {
+  display: none;
+}
+
+.copy-button {
+  border: 1px solid #cbd4da;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 0 12px;
+  background: #284c68;
+  border-color: #284c68;
+  color: #ffffff;
+}
+
+.workspace {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.module-panel,
+.preview-panel {
+  background: #ffffff;
+  border: 1px solid #cfd7dd;
+  border-radius: 8px;
+  box-shadow: 0 14px 28px rgba(31, 38, 43, 0.07);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.module-panel {
+  display: grid;
+  min-height: 0;
+}
+
+.preview-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.panel-heading {
+  align-items: center;
+  border-bottom: 1px solid #dbe2e7;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 12px 14px;
+}
+
+.module-list {
+  display: grid;
+  gap: 8px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.module-row {
+  align-items: start;
+  background: #f8fafb;
+  border: 1px solid #dbe2e7;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 98px;
+  padding: 12px;
+}
+
+.module-row:has(input:checked) {
+  background: #eef7f2;
+  border-color: #8ab69d;
+}
+
+.module-row input {
+  accent-color: #2d7351;
+  height: 18px;
+  margin-top: 2px;
+  width: 18px;
+}
+
+.module-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.module-copy strong {
+  color: #172027;
+  font-size: 0.96rem;
+}
+
+.module-copy small {
+  color: #53606a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.module-copy code {
+  background: #ffffff;
+  border: 1px solid #dbe2e7;
+  border-radius: 5px;
+  color: #7b3f1d;
+  display: block;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  overflow: hidden;
+  padding: 6px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-state {
+  color: #63717b;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 24px 10px;
+  text-align: center;
+}
+
+.code-preview {
+  background: #172027;
+  color: #d7f4e2;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  margin: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+  tab-size: 2;
+}
+
+.code-preview code {
+  white-space: pre;
+}
+
+@media (max-width: 980px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .module-panel {
+    max-height: 34vh;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .app-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .panel-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .copy-button {
+    width: 100%;
+  }
+}

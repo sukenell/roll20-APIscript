@@ -1,0 +1,100 @@
+import { SCRIPT_MODULES, buildMixedScript } from "./scriptMixer.js";
+
+const state = {
+  selected: Object.fromEntries(SCRIPT_MODULES.map((module) => [module.id, true]))
+};
+
+const elements = {
+  codePreview: document.querySelector("#code-preview"),
+  copyCode: document.querySelector("#copy-code"),
+  copyStatus: document.querySelector("#copy-status"),
+  moduleList: document.querySelector("#module-list")
+};
+
+renderModuleList();
+renderPreview();
+
+elements.copyCode.addEventListener("click", async () => {
+  const code = buildMixedScript(state.selected);
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code);
+    } else {
+      copyWithFallback(code);
+    }
+
+    setCopyStatus("복사됨");
+  } catch {
+    setCopyStatus("복사 실패");
+  }
+});
+
+function renderModuleList() {
+  const rows = SCRIPT_MODULES.map((module) => {
+    const row = document.createElement("label");
+    row.className = "module-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = Boolean(state.selected[module.id]);
+    checkbox.addEventListener("change", () => {
+      state.selected = {
+        ...state.selected,
+        [module.id]: checkbox.checked
+      };
+      renderPreview();
+    });
+
+    const text = document.createElement("span");
+    text.className = "module-copy";
+
+    const titleLine = document.createElement("strong");
+    titleLine.textContent = module.title;
+
+    const description = document.createElement("small");
+    description.textContent = module.description;
+
+    const command = document.createElement("code");
+    command.textContent = module.command;
+
+    text.append(titleLine, description, command);
+    row.append(checkbox, text);
+    return row;
+  });
+
+  if (!rows.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "등록된 스크립트가 없습니다.";
+    elements.moduleList.replaceChildren(empty);
+    return;
+  }
+
+  elements.moduleList.replaceChildren(...rows);
+}
+
+function renderPreview() {
+  elements.codePreview.textContent = buildMixedScript(state.selected);
+}
+
+function setCopyStatus(value) {
+  elements.copyStatus.textContent = value;
+  window.clearTimeout(setCopyStatus.timer);
+  setCopyStatus.timer = window.setTimeout(() => {
+    elements.copyStatus.textContent = "";
+  }, 1400);
+}
+
+function copyWithFallback(text) {
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.inset = "0 auto auto 0";
+  field.style.opacity = "0";
+  document.body.append(field);
+  field.select();
+  document.execCommand("copy");
+  field.remove();
+}
