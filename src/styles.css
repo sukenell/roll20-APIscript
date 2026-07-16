@@ -151,19 +151,12 @@ h2 {
 
 .module-row {
   align-items: start;
-  background: #f8fafb;
   border: 1px solid #dbe2e7;
-  border-radius: 8px;
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr);
   min-height: 98px;
   padding: 12px;
-}
-
-.module-row:has(input:checked) {
-  background: #eef7f2;
-  border-color: #8ab69d;
 }
 
 .module-row input {

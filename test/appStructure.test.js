@@ -47,3 +47,12 @@ test("preview panel stays inside the viewport and scrolls internally", () => {
   assert.match(css, /\.code-preview\s*{[^}]*overflow:\s*auto/s);
   assert.match(css, /\.code-preview\s*{[^}]*min-height:\s*0/s);
 });
+
+test("module choices have no background color or rounded corners", () => {
+  const css = readFileSync(new URL("src/styles.css", root), "utf8");
+  const moduleRow = css.match(/\.module-row\s*{([^}]*)}/s)?.[1] ?? "";
+
+  assert.equal(moduleRow.includes("background:"), false);
+  assert.equal(moduleRow.includes("border-radius:"), false);
+  assert.equal(css.includes(".module-row:has(input:checked)"), false);
+});

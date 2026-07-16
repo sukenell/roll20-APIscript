@@ -7,7 +7,7 @@ import {
   getSelectedModules
 } from "../src/scriptMixer.js";
 
-test("script catalog only contains the user-provided token image list checker", () => {
+test("script catalog contains the dexterity order script", () => {
   assert.deepEqual(
     SCRIPT_MODULES.map((module) => ({
       id: module.id,
@@ -16,36 +16,44 @@ test("script catalog only contains the user-provided token image list checker", 
     })),
     [
       {
-        id: "bigside",
-        title: "-토큰 이미지 리스트 확인",
-        command: "!bigside / !bigside-set"
+        id: "dex-order",
+        title: "- 캐릭터 민첩 리스트 출력",
+        command: "!dex-order"
       }
     ]
   );
 });
 
-test("buildMixedScript returns blank output when the first script is not selected", () => {
+test("script catalog shows the supplied dexterity order description", () => {
+  assert.equal(
+    SCRIPT_MODULES[0].description,
+    "플레이어블 캐릭터의 모든 민첩을 높은순에서 낮은순으로 나열합니다. 모두의 민첩이 같을시엔 근접전 기능치로 리스트를 나열합니다."
+  );
+});
+
+test("buildMixedScript returns blank output when the script is not selected", () => {
   const output = buildMixedScript({});
 
   assert.equal(output, "");
 });
 
-test("buildMixedScript exports only the token image list checker when selected", () => {
-  const output = buildMixedScript({ bigside: true });
+test("buildMixedScript exports the supplied dexterity order script when selected", () => {
+  const output = buildMixedScript({ "dex-order": true });
 
-  assert.match(output, /const SG_BIGSIDE =/);
-  assert.match(output, /renderSidePicker/);
-  assert.match(output, /!bigside/);
-  assert.match(output, /!bigside-set/);
-  assert.match(output, /currentSide/);
-  assert.equal(/const SG_(?!BIGSIDE)/.test(output), false);
+  assert.match(output, /var DexterityOrder = DexterityOrder \|\|/);
+  assert.match(output, /var COMMAND = '!dex-order'/);
+  assert.match(output, /fighting_brawl/);
+  assert.match(output, /firearms_hg/);
+  assert.match(output, /firearms_rs/);
+  assert.equal(output.includes(".split(/\\s+/)[0]"), true);
+  assert.match(output, /DexterityOrder\.registerEventHandlers\(\)/);
 });
 
 test("getSelectedModules ignores unknown keys", () => {
-  const selected = getSelectedModules({ bigside: true, unknown: true });
+  const selected = getSelectedModules({ "dex-order": true, unknown: true });
 
   assert.deepEqual(
     selected.map((module) => module.id),
-    ["bigside"]
+    ["dex-order"]
   );
 });
