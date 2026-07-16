@@ -56,3 +56,21 @@ test("module choices have no background color or rounded corners", () => {
   assert.equal(moduleRow.includes("border-radius:"), false);
   assert.equal(css.includes(".module-row:has(input:checked)"), false);
 });
+
+test("dexterity code is loaded from the zero-indexed script folder", () => {
+  const mixer = readFileSync(new URL("src/scriptMixer.js", root), "utf8");
+  const moduleIndex = readFileSync(
+    new URL("src/scripts/0-dex-order/index.js", root),
+    "utf8"
+  );
+  const dexList = readFileSync(
+    new URL("src/scripts/0-dex-order/dex_list.js", root),
+    "utf8"
+  );
+
+  assert.match(mixer, /import dexOrderModule from "\.\/scripts\/0-dex-order\/index\.js"/);
+  assert.match(mixer, /SCRIPT_MODULES = \[dexOrderModule\]/);
+  assert.match(moduleIndex, /import \{ DEX_LIST_CODE \} from "\.\/dex_list\.js"/);
+  assert.match(moduleIndex, /code: DEX_LIST_CODE/);
+  assert.match(dexList, /export const DEX_LIST_CODE =/);
+});
