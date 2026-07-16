@@ -31,6 +31,11 @@ test("browser app keeps checkbox selection and preview without filtering or bulk
   assert.match(source, /renderModuleList/);
   assert.match(source, /buildMixedScript/);
   assert.match(source, /navigator\.clipboard/);
+  assert.match(source, /document\.createElement\("div"\)/);
+  assert.equal(source.includes('document.createElement("label")'), false);
+  assert.match(source, /checkbox\.setAttribute\("aria-labelledby", titleId\)/);
+  assert.match(source, /titleLine\.id = titleId/);
+  assert.equal(source.includes('row.addEventListener("click"'), false);
   assert.equal(source.includes("renderCategoryTabs"), false);
   assert.equal(source.includes("getFilteredModules"), false);
   assert.equal(source.includes("toggleAllModules"), false);

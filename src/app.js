@@ -32,12 +32,15 @@ elements.copyCode.addEventListener("click", async () => {
 
 function renderModuleList() {
   const rows = SCRIPT_MODULES.map((module) => {
-    const row = document.createElement("label");
+    const row = document.createElement("div");
     row.className = "module-row";
+
+    const titleId = `module-${module.id}-title`;
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = Boolean(state.selected[module.id]);
+    checkbox.setAttribute("aria-labelledby", titleId);
     checkbox.addEventListener("change", () => {
       state.selected = {
         ...state.selected,
@@ -50,6 +53,7 @@ function renderModuleList() {
     text.className = "module-copy";
 
     const titleLine = document.createElement("strong");
+    titleLine.id = titleId;
     titleLine.textContent = module.title;
 
     const description = document.createElement("small");
