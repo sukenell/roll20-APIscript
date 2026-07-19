@@ -74,8 +74,26 @@ test("dexterity code is loaded from the zero-indexed script folder", () => {
   );
 
   assert.match(mixer, /import dexOrderModule from "\.\/scripts\/0-dex-order\/index\.js"/);
-  assert.match(mixer, /SCRIPT_MODULES = \[dexOrderModule\]/);
+  assert.match(mixer, /SCRIPT_MODULES = \[dexOrderModule,/);
   assert.match(moduleIndex, /import \{ DEX_LIST_CODE \} from "\.\/dex_list\.js"/);
   assert.match(moduleIndex, /code: DEX_LIST_CODE/);
   assert.match(dexList, /export const DEX_LIST_CODE =/);
+});
+
+test("token random code is loaded as the second script module", () => {
+  const mixer = readFileSync(new URL("src/scriptMixer.js", root), "utf8");
+  const moduleIndex = readFileSync(
+    new URL("src/scripts/1-token-random/index.js", root),
+    "utf8"
+  );
+  const tokenRandom = readFileSync(
+    new URL("src/scripts/1-token-random/token_random.js", root),
+    "utf8"
+  );
+
+  assert.match(mixer, /import tokenRandomModule from "\.\/scripts\/1-token-random\/index\.js"/);
+  assert.match(mixer, /SCRIPT_MODULES = \[dexOrderModule, tokenRandomModule\]/);
+  assert.match(moduleIndex, /import \{ TOKEN_RANDOM_CODE \} from "\.\/token_random\.js"/);
+  assert.match(moduleIndex, /code: TOKEN_RANDOM_CODE/);
+  assert.match(tokenRandom, /export const TOKEN_RANDOM_CODE =/);
 });
