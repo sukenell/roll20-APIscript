@@ -10,7 +10,7 @@
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Roll20 API Script</p>
+          <p class="eyebrow">R20 API BY NELL</p>
         </div>
         <output class="copy-status" id="copy-status" aria-live="polite"></output>
       </header>
@@ -21,10 +21,17 @@
         </aside>
 
         <section class="preview-panel" aria-label="코드 프리뷰">
-          <div class="panel-heading">
+          <textarea
+            class="code-preview"
+            id="code-preview"
+            aria-label="생성된 Roll20 API 코드"
+            aria-live="polite"
+            readonly
+            spellcheck="false"
+          ></textarea>
+          <div class="preview-actions">
             <button class="copy-button" id="copy-code" type="button">복사</button>
           </div>
-          <pre class="code-preview" aria-live="polite"><code id="code-preview"></code></pre>
         </section>
       </div>
 

@@ -1,4 +1,4 @@
-export const TOKEN_RANDOM_CODE = `// (token_random.js) 260718 by sukenelll
+export const TOKEN_RANDOM_CODE = `// (token_random.js) 260718 by NELL
 
 on('ready', function () {
     var TokenRandom = (function () {

@@ -1,7 +1,7 @@
 import { SCRIPT_MODULES, buildMixedScript } from "./scriptMixer.js";
 
 const state = {
-  selected: Object.fromEntries(SCRIPT_MODULES.map((module) => [module.id, true]))
+  selected: Object.fromEntries(SCRIPT_MODULES.map((module) => [module.id, false]))
 };
 
 const elements = {
@@ -71,7 +71,7 @@ function renderModuleList() {
 }
 
 function renderPreview() {
-  elements.codePreview.textContent = buildMixedScript(state.selected);
+  elements.codePreview.value = buildMixedScript(state.selected);
 }
 
 function setCopyStatus(value) {

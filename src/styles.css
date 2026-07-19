@@ -94,69 +94,65 @@ h2 {
 
 .copy-button {
   border: 1px solid #cbd4da;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 0.84rem;
   font-weight: 800;
-  min-height: 38px;
+  min-height: 48px;
   padding: 0 12px;
   background: #284c68;
   border-color: #284c68;
   color: #ffffff;
+  width: 100%;
 }
 
 .workspace {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   min-height: 0;
 }
 
-.module-panel,
 .preview-panel {
   background: #ffffff;
   border: 1px solid #cfd7dd;
-  border-radius: 8px;
   box-shadow: 0 14px 28px rgba(31, 38, 43, 0.07);
   min-width: 0;
   overflow: hidden;
 }
 
 .module-panel {
+  align-content: start;
   display: grid;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .preview-panel {
+  border-radius: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
 }
 
-.panel-heading {
-  align-items: center;
-  border-bottom: 1px solid #dbe2e7;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 12px 14px;
+.preview-actions {
+  border-top: 1px solid #dbe2e7;
 }
 
 .module-list {
+  align-content: start;
   display: grid;
-  gap: 8px;
+  gap: 14px;
   overflow: auto;
-  padding: 12px;
+  padding: 4px 8px 4px 0;
 }
 
 .module-row {
   align-items: start;
-  border: 1px solid #dbe2e7;
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr);
-  min-height: 98px;
-  padding: 12px;
+  padding: 0;
 }
 
 .module-row input {
@@ -184,17 +180,13 @@ h2 {
 }
 
 .module-copy code {
-  background: #ffffff;
-  border: 1px solid #dbe2e7;
-  border-radius: 5px;
   color: #7b3f1d;
-  display: block;
+  display: inline-block;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.78rem;
-  overflow: hidden;
-  padding: 6px 7px;
-  text-overflow: ellipsis;
+  padding: 0;
   white-space: nowrap;
+  width: max-content;
 }
 
 .empty-state {
@@ -207,6 +199,8 @@ h2 {
 
 .code-preview {
   background: #172027;
+  border: 0;
+  border-radius: 0;
   color: #d7f4e2;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.84rem;
@@ -215,11 +209,10 @@ h2 {
   min-height: 0;
   overflow: auto;
   padding: 18px;
+  resize: none;
   tab-size: 2;
-}
-
-.code-preview code {
   white-space: pre;
+  width: 100%;
 }
 
 @media (max-width: 980px) {
@@ -243,12 +236,4 @@ h2 {
     flex-direction: column;
   }
 
-  .panel-heading {
-    align-items: start;
-    flex-direction: column;
-  }
-
-  .copy-button {
-    width: 100%;
-  }
 }
