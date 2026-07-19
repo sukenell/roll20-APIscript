@@ -67,14 +67,6 @@ function renderModuleList() {
     return row;
   });
 
-  if (!rows.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "등록된 스크립트가 없습니다.";
-    elements.moduleList.replaceChildren(empty);
-    return;
-  }
-
   elements.moduleList.replaceChildren(...rows);
 }
 
