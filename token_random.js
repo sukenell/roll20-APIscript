@@ -1,4 +1,4 @@
-// (token_random.js) 260719 by NELL
+// (token_random.js) 260719 by sukenelll
 
 on('ready', function () {
     var COMMAND = '!r';

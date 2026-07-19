@@ -1,4 +1,4 @@
-export const DEX_LIST_CODE = `// (dex_list.js) 260715 by NELL
+export const DEX_LIST_CODE = `// (dex_list.js) 260715 by sukenelll
 
 on('ready', function () {
     var DexterityOrder = (function () {
