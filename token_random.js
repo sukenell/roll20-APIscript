@@ -2,6 +2,14 @@
 
 on('ready', function () {
     var COMMAND = '!r';
+    var WHISPER_RESULT_TO_GM = false;
+
+    function escapeChatText(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
 
     function normalizeImageUrl(value) {
         var url = String(value || '');
@@ -18,7 +26,7 @@ on('ready', function () {
             .replace('/original.', '/thumb.');
     }
 
-    function getMatchingWeights(sides) {
+    function getMatchingTableData(sides) {
         var normalizedSides = sides.map(normalizeImageUrl);
         var tables = {};
 
@@ -36,6 +44,7 @@ on('ready', function () {
             .map(function (tableId) {
                 var remaining = tables[tableId].slice();
                 var weights = [];
+                var names = [];
 
                 if (remaining.length !== normalizedSides.length) {
                     return null;
@@ -68,13 +77,21 @@ on('ready', function () {
                             ? 0
                             : weight
                     );
+                    names.push(
+                        String(
+                            remaining[itemIndex].get('name') || ''
+                        )
+                    );
                     remaining.splice(itemIndex, 1);
                 }
 
-                return weights;
+                return {
+                    weights: weights,
+                    names: names
+                };
             })
-            .filter(function (weights) {
-                return weights !== null;
+            .filter(function (tableData) {
+                return tableData !== null;
             });
 
         return matches.length === 1 ? matches[0] : null;
@@ -130,9 +147,9 @@ on('ready', function () {
             return;
         }
 
-        var weights = getMatchingWeights(sides);
-        var sideIndex = weights
-            ? chooseWeightedSide(weights)
+        var tableData = getMatchingTableData(sides);
+        var sideIndex = tableData
+            ? chooseWeightedSide(tableData.weights)
             : null;
 
         if (sideIndex === null) {
@@ -166,6 +183,21 @@ on('ready', function () {
             currentSide: sideIndex,
             imgsrc: imageUrl
         });
+
+        if (WHISPER_RESULT_TO_GM) {
+            var resultName = tableData
+                ? tableData.names[sideIndex]
+                : token.get('name');
+
+            if (resultName) {
+                sendChat(
+                    '',
+                    '/w GM ' + escapeChatText(resultName),
+                    null,
+                    { noarchive: true }
+                );
+            }
+        }
     }
 
     function handleChatMessage(msg) {
