@@ -54,7 +54,7 @@ button {
   font-weight: 800;
   letter-spacing: 0;
   margin: 0 0 5px;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 h1,
@@ -93,16 +93,23 @@ h2 {
 }
 
 .copy-button {
-  border: 1px solid #cbd4da;
+  background: #373d49;
+  border: 0;
   border-radius: 0;
+  color: #ffffff;
   font-size: 0.84rem;
   font-weight: 800;
   min-height: 48px;
   padding: 0 12px;
-  background: #284c68;
-  border-color: #284c68;
-  color: #ffffff;
+  transition: background-color 150ms ease, color 150ms ease;
   width: 100%;
+}
+
+.copy-button:hover,
+.copy-button:focus-visible {
+  background: #35d7bb;
+  color: #2b2f36;
+  outline: none;
 }
 
 .workspace {
@@ -114,8 +121,8 @@ h2 {
 
 .preview-panel {
   background: #ffffff;
-  border: 1px solid #cfd7dd;
-  box-shadow: 0 14px 28px rgba(31, 38, 43, 0.07);
+  border: 1px solid #e8e8e8;
+  box-shadow: none;
   min-width: 0;
   overflow: hidden;
 }
@@ -131,8 +138,49 @@ h2 {
 .preview-panel {
   border-radius: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: 48px 48px minmax(0, 1fr) auto;
   min-height: 0;
+}
+
+.preview-toolbar {
+  align-items: center;
+  background: #373d49;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.preview-toolbar strong {
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+}
+
+.preview-toolbar span {
+  color: #35d7bb;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.preview-document-bar {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #e8e8e8;
+  color: #373d49;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.preview-document-bar strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.preview-document-bar output {
+  color: #a0aabf;
+  font-size: 0.75rem;
 }
 
 .preview-actions {
@@ -198,13 +246,13 @@ h2 {
 }
 
 .code-preview {
-  background: #172027;
+  background: #fafbfc;
   border: 0;
   border-radius: 0;
-  color: #d7f4e2;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 0.84rem;
-  line-height: 1.55;
+  color: #373d49;
+  font-family: "Ubuntu Mono", Monaco, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
   margin: 0;
   min-height: 0;
   overflow: auto;
@@ -213,6 +261,11 @@ h2 {
   tab-size: 2;
   white-space: pre;
   width: 100%;
+}
+
+.code-preview:focus {
+  box-shadow: inset 0 0 0 2px #35d7bb;
+  outline: none;
 }
 
 @media (max-width: 980px) {

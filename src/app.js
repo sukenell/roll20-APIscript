@@ -8,7 +8,8 @@ const elements = {
   codePreview: document.querySelector("#code-preview"),
   copyCode: document.querySelector("#copy-code"),
   copyStatus: document.querySelector("#copy-status"),
-  moduleList: document.querySelector("#module-list")
+  moduleList: document.querySelector("#module-list"),
+  previewMeta: document.querySelector("#preview-meta")
 };
 
 renderModuleList();
@@ -72,6 +73,13 @@ function renderModuleList() {
 
 function renderPreview() {
   elements.codePreview.value = buildMixedScript(state.selected);
+  const selectedCount = SCRIPT_MODULES.filter(
+    (module) => state.selected[module.id]
+  ).length;
+
+  elements.previewMeta.textContent = `${selectedCount} ${
+    selectedCount === 1 ? "module" : "modules"
+  }`;
 }
 
 function setCopyStatus(value) {
