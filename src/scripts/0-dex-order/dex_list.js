@@ -1,7 +1,7 @@
 export const DEX_LIST_CODE = `// (dex_list.js) 260715 by sukenelll
 
 on('ready', function () {
-    var DexterityOrder = (function () {
+    var AttributeOrder = (function () {
         /* 정렬할 특성치와 명령어 */
         var ORDER_ATTRIBUTES = [
             {
@@ -22,6 +22,8 @@ on('ready', function () {
         ];
         var STATE_NAMESPACE = 'AttributeOrder';
         var DEFAULT_GM_CHARACTER_NAMES = [];
+        var ORDER_COMMAND_PATTERN =
+            /^!(dex|pow|con)-order/i;
         var MANAGE_COMMAND_PATTERN =
             /^!(dex|pow|con)-order\\s*([+-])\\s*"([^"]*)"\\s*$/i;
         var COMBAT_ATTRIBUTES = [
@@ -156,6 +158,19 @@ on('ready', function () {
                 '/w gm GM 캐릭터 예외 명단 ' +
                 actionLabel + ': ' +
                 names.map(escapeTemplateText).join(', ')
+            );
+        }
+
+        function showCommandUsage(orderAttribute) {
+            sendChat(
+                orderAttribute.label + ' 순서',
+                '/w gm 사용법: ' +
+                orderAttribute.command +
+                ' 또는 ' +
+                orderAttribute.command +
+                '+"철수, 짱구" / ' +
+                orderAttribute.command +
+                '-"철수, 짱구"'
             );
         }
 
@@ -406,11 +421,19 @@ on('ready', function () {
             var manageCommandMatch =
                 content.match(MANAGE_COMMAND_PATTERN);
 
+            var orderCommandMatch =
+                content.match(ORDER_COMMAND_PATTERN);
+
             var command = manageCommandMatch
                 ? '!' +
                     manageCommandMatch[1]
                         .toLowerCase() +
                     '-order'
+                : orderCommandMatch
+                    ? '!' +
+                        orderCommandMatch[1]
+                            .toLowerCase() +
+                        '-order'
                 : content
                     .split(/\\s+/)[0]
                     .toLowerCase();
@@ -461,6 +484,16 @@ on('ready', function () {
                 return;
             }
 
+            if (
+                !manageCommandMatch &&
+                content.toLowerCase() !==
+                    orderAttribute.command
+            ) {
+                showCommandUsage(orderAttribute);
+
+                return;
+            }
+
             try {
                 showOrder(orderAttribute);
             } catch (error) {
@@ -492,6 +525,6 @@ on('ready', function () {
         };
     }());
 
-    DexterityOrder.initializeState();
-    DexterityOrder.registerEventHandlers();
+    AttributeOrder.initializeState();
+    AttributeOrder.registerEventHandlers();
 });`;

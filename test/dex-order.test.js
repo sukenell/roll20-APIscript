@@ -3,6 +3,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 import { DEX_LIST_CODE } from "../src/scripts/0-dex-order/dex_list.js";
+import dexOrderModule from "../src/scripts/0-dex-order/index.js";
 
 function createCharacter(id, name, controlledby = "player-1") {
   return {
@@ -189,4 +190,66 @@ test("non-GM players cannot change the allowlist", () => {
     []
   );
   assert.match(roll20.messages.at(-1).content, /GM만 사용할 수 있습니다/);
+});
+
+test("!con-order sorts by Constitution and renders only the Health label", () => {
+  const roll20 = createRoll20Sandbox({
+    characters: [
+      createCharacter("a", "철수"),
+      createCharacter("b", "짱구")
+    ],
+    attributes: {
+      a: { dex: 90, pow: 80, con: 40 },
+      b: { dex: 30, pow: 20, con: 70 }
+    }
+  });
+
+  roll20.send("!con-order");
+
+  const output = roll20.messages.at(-1).content;
+  assert.match(output, /\{\{name=건강 순서 확인\}\}/);
+  assert.match(output, /\{\{짱구=건강 70\}\}/);
+  assert.match(output, /\{\{철수=건강 40\}\}/);
+  assert.ok(output.indexOf("짱구") < output.indexOf("철수"));
+  assert.doesNotMatch(output, /민첩 순서|정신력 순서/);
+});
+
+test("equal selected values use the existing combat-skill fallback", () => {
+  const roll20 = createRoll20Sandbox({
+    characters: [
+      createCharacter("a", "철수"),
+      createCharacter("b", "짱구")
+    ],
+    attributes: {
+      a: { con: 50, fighting_brawl: 20 },
+      b: { con: 50, fighting_brawl: 70 }
+    }
+  });
+
+  roll20.send("!con-order");
+
+  const output = roll20.messages.at(-1).content;
+  assert.ok(output.indexOf("짱구") < output.indexOf("철수"));
+  assert.match(output, /짱구=건강 50 \/ 기능치 70 \(근접전\)/);
+});
+
+test("malformed allowlist syntax returns label-aware usage", () => {
+  const roll20 = createRoll20Sandbox();
+
+  roll20.send('!con-order+"철수');
+
+  assert.equal(roll20.messages.length, 1);
+  assert.equal(roll20.messages[0].who, "건강 순서");
+  assert.match(roll20.messages[0].content, /사용법/);
+  assert.match(roll20.messages[0].content, /!con-order\+"철수, 짱구"/);
+});
+
+test("mixer metadata advertises all attribute order commands", () => {
+  assert.match(dexOrderModule.title, /특성치/);
+  assert.match(dexOrderModule.command, /!dex-order/);
+  assert.match(dexOrderModule.command, /!pow-order/);
+  assert.match(dexOrderModule.command, /!con-order/);
+  assert.match(dexOrderModule.description, /민첩/);
+  assert.match(dexOrderModule.description, /정신력/);
+  assert.match(dexOrderModule.description, /건강/);
 });
