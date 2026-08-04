@@ -5,14 +5,19 @@ import vm from "node:vm";
 import { DEX_LIST_CODE } from "../src/scripts/0-dex-order/dex_list.js";
 import dexOrderModule from "../src/scripts/0-dex-order/index.js";
 
-function createCharacter(id, name, controlledby = "player-1") {
+function createCharacter(
+  id,
+  name,
+  controlledby = "player-1",
+  archived = false
+) {
   return {
     id,
     get(property) {
       const values = {
         name,
         controlledby,
-        archived: false
+        archived
       };
 
       return values[property];
@@ -92,6 +97,7 @@ test("!pow-order sorts by Power and renders the Power label", () => {
   roll20.send("!pow-order");
 
   assert.equal(roll20.messages.length, 1);
+  assert.equal(roll20.messages[0].who, "정신력 순서");
   const output = roll20.messages[0].content;
   assert.match(output, /\{\{name=정신력 순서 확인\}\}/);
   assert.match(output, /\{\{짱구=정신력 80\}\}/);
@@ -214,6 +220,22 @@ test("!con-order sorts by Constitution and renders only the Health label", () =>
   assert.doesNotMatch(output, /민첩 순서|정신력 순서/);
 });
 
+test("every order result uses its selected attribute as the chat sender", () => {
+  const cases = [
+    ["!dex-order", "민첩 순서"],
+    ["!pow-order", "정신력 순서"],
+    ["!con-order", "건강 순서"]
+  ];
+
+  cases.forEach(([command, sender]) => {
+    const roll20 = createRoll20Sandbox();
+
+    roll20.send(command);
+
+    assert.equal(roll20.messages.at(-1).who, sender);
+  });
+});
+
 test("equal selected values use the existing combat-skill fallback", () => {
   const roll20 = createRoll20Sandbox({
     characters: [
@@ -242,6 +264,37 @@ test("malformed allowlist syntax returns label-aware usage", () => {
   assert.equal(roll20.messages[0].who, "건강 순서");
   assert.match(roll20.messages[0].content, /사용법/);
   assert.match(roll20.messages[0].content, /!con-order\+"철수, 짱구"/);
+});
+
+test("commands that only share an order-command prefix are ignored", () => {
+  const roll20 = createRoll20Sandbox();
+
+  roll20.send("!dex-ordering");
+  roll20.send("!pow-order-helper");
+
+  assert.equal(roll20.messages.length, 0);
+});
+
+test("archived allowlisted characters stay excluded from an empty result", () => {
+  const roll20 = createRoll20Sandbox({
+    characters: [
+      createCharacter("archived", "철수", "gm", true)
+    ],
+    attributes: {
+      archived: { pow: 80 }
+    },
+    savedState: {
+      AttributeOrder: {
+        gmCharacterNames: ["철수"]
+      }
+    }
+  });
+
+  roll20.send("!pow-order");
+
+  const output = roll20.messages.at(-1).content;
+  assert.doesNotMatch(output, /철수/);
+  assert.match(output, /현재 순서를 확인할 캐릭터가 없습니다/);
 });
 
 test("mixer metadata advertises all attribute order commands", () => {

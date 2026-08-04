@@ -23,7 +23,7 @@ on('ready', function () {
         var STATE_NAMESPACE = 'AttributeOrder';
         var DEFAULT_GM_CHARACTER_NAMES = [];
         var ORDER_COMMAND_PATTERN =
-            /^!(dex|pow|con)-order/i;
+            /^!(dex|pow|con)-order(?=$|\\s|[+-]\\s*")/i;
         var MANAGE_COMMAND_PATTERN =
             /^!(dex|pow|con)-order\\s*([+-])\\s*"([^"]*)"\\s*$/i;
         var COMBAT_ATTRIBUTES = [
@@ -340,7 +340,7 @@ on('ready', function () {
 
             if (characters.length === 0) {
                 return output +
-                    ' {{결과=현재 플레이어가 제어하는 ' +
+                    ' {{결과=현재 순서를 확인할 ' +
                     '캐릭터가 없습니다.}}';
             }
 
@@ -401,7 +401,7 @@ on('ready', function () {
             var result = sortCharacters(characters);
 
             sendChat(
-                '',
+                orderAttribute.label + ' 순서',
                 buildTemplate(
                     result.characters,
                     result.showCombat,
