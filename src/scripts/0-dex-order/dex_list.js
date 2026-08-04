@@ -2,8 +2,24 @@ export const DEX_LIST_CODE = `// (dex_list.js) 260715 by sukenelll
 
 on('ready', function () {
     var DexterityOrder = (function () {
-        /* 명령어 */
-        var COMMAND = '!dex-order';
+        /* 정렬할 특성치와 명령어 */
+        var ORDER_ATTRIBUTES = [
+            {
+                command: '!dex-order',
+                label: '민첩',
+                names: ['dex']
+            },
+            {
+                command: '!pow-order',
+                label: '정신력',
+                names: ['pow']
+            },
+            {
+                command: '!con-order',
+                label: '건강',
+                names: ['con']
+            }
+        ];
         var COMBAT_ATTRIBUTES = [
             {
                 names: ['fighting_brawl'],
@@ -31,6 +47,12 @@ on('ready', function () {
                 .replace(/{/g, '&#123;')
                 .replace(/}/g, '&#125;')
                 .replace(/=/g, '&#61;');
+        }
+
+        function findOrderAttribute(command) {
+            return ORDER_ATTRIBUTES.find(function (attribute) {
+                return attribute.command === command;
+            });
         }
 
         function isPlayerControlled(character) {
@@ -96,18 +118,19 @@ on('ready', function () {
             return combatValues[0];
         }
 
-        function getCharacterInfo(character, sheetIndex) {
+        function getCharacterInfo(
+            character,
+            sheetIndex,
+            orderAttribute
+        ) {
             return {
                 id: character.id,
                 name: String(
                     character.get('name') || '이름 없음'
                 ),
-                dex: toNumber(
-                    getAttrByName(
-                        character.id,
-                        'dex',
-                        'current'
-                    )
+                orderValue: getAttributeValue(
+                    character.id,
+                    orderAttribute.names
                 ),
                 combat: getCombatInfo(character.id),
                 sheetIndex: sheetIndex
@@ -127,21 +150,21 @@ on('ready', function () {
         }
 
         function sortCharacters(characters) {
-            var allDexEqual = allValuesEqual(
+            var allOrderValuesEqual = allValuesEqual(
                 characters,
                 function (character) {
-                    return character.dex;
+                    return character.orderValue;
                 }
             );
 
             /*
-             * 모든 캐릭터의 민첩이 같지 않으면
-             * 민첩을 기준으로 내림차순 정렬합니다.
+             * 모든 캐릭터의 선택 특성치가 같지 않으면
+             * 선택 특성치를 기준으로 내림차순 정렬합니다.
              */
-            if (!allDexEqual) {
+            if (!allOrderValuesEqual) {
                 characters.sort(function (a, b) {
-                    if (a.dex !== b.dex) {
-                        return b.dex - a.dex;
+                    if (a.orderValue !== b.orderValue) {
+                        return b.orderValue - a.orderValue;
                     }
 
                     return a.sheetIndex - b.sheetIndex;
@@ -161,7 +184,7 @@ on('ready', function () {
             );
 
             /*
-             * 모든 민첩이 같고 기능치가 서로 다르면
+             * 모든 선택 특성치가 같고 기능치가 서로 다르면
              * 가장 높은 전투 기능치를 기준으로 정렬합니다.
              */
             if (!allCombatEqual) {
@@ -185,10 +208,16 @@ on('ready', function () {
             };
         }
 
-        function buildTemplate(characters, showCombat) {
+        function buildTemplate(
+            characters,
+            showCombat,
+            orderAttribute
+        ) {
             var output =
                 '/desc &{template:default} ' +
-                '{{name=민첩 순서 확인}}';
+                '{{name=' +
+                escapeTemplateText(orderAttribute.label) +
+                ' 순서 확인}}';
 
             if (characters.length === 0) {
                 return output +
@@ -201,7 +230,9 @@ on('ready', function () {
                     escapeTemplateText(character.name);
 
                 var value =
-                    '민첩 ' + character.dex;
+                    escapeTemplateText(orderAttribute.label) +
+                    ' ' +
+                    character.orderValue;
 
                 if (showCombat) {
                     value +=
@@ -225,7 +256,7 @@ on('ready', function () {
             return output;
         }
 
-        function showOrder() {
+        function showOrder(orderAttribute) {
             var characters = findObjs({
                 _type: 'character'
             })
@@ -238,7 +269,8 @@ on('ready', function () {
                 .map(function (character, index) {
                     return getCharacterInfo(
                         character,
-                        index
+                        index,
+                        orderAttribute
                     );
                 });
 
@@ -248,7 +280,8 @@ on('ready', function () {
                 '',
                 buildTemplate(
                     result.characters,
-                    result.showCombat
+                    result.showCombat,
+                    orderAttribute
                 )
             );
         }
@@ -263,13 +296,16 @@ on('ready', function () {
                 .split(/\\s+/)[0]
                 .toLowerCase();
 
-            if (command !== COMMAND) {
+            var orderAttribute =
+                findOrderAttribute(command);
+
+            if (!orderAttribute) {
                 return;
             }
 
             if (!playerIsGM(msg.playerid)) {
                 sendChat(
-                    '민첩 순서',
+                    orderAttribute.label + ' 순서',
                     '/w "' +
                     String(msg.who || '')
                         .replace(/"/g, '') +
@@ -280,10 +316,10 @@ on('ready', function () {
             }
 
             try {
-                showOrder();
+                showOrder(orderAttribute);
             } catch (error) {
                 log(
-                    'DexterityOrder 오류: ' +
+                    orderAttribute.label + ' 순서 오류: ' +
                     (
                         error && error.stack
                             ? error.stack
@@ -292,7 +328,7 @@ on('ready', function () {
                 );
 
                 sendChat(
-                    '민첩 순서',
+                    orderAttribute.label + ' 순서',
                     '/w gm 실행 중 오류가 발생했습니다. ' +
                     'API 콘솔을 확인하세요.'
                 );
