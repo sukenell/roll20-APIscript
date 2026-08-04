@@ -20,6 +20,10 @@ on('ready', function () {
                 names: ['con']
             }
         ];
+        var STATE_NAMESPACE = 'AttributeOrder';
+        var DEFAULT_GM_CHARACTER_NAMES = [];
+        var MANAGE_COMMAND_PATTERN =
+            /^!(dex|pow|con)-order\\s*([+-])\\s*"([^"]*)"\\s*$/i;
         var COMBAT_ATTRIBUTES = [
             {
                 names: ['fighting_brawl'],
@@ -53,6 +57,106 @@ on('ready', function () {
             return ORDER_ATTRIBUTES.find(function (attribute) {
                 return attribute.command === command;
             });
+        }
+
+        function normalizeCharacterNames(names) {
+            var result = [];
+
+            names.forEach(function (name) {
+                var normalizedName = String(name || '').trim();
+
+                if (
+                    normalizedName !== '' &&
+                    result.indexOf(normalizedName) === -1
+                ) {
+                    result.push(normalizedName);
+                }
+            });
+
+            return result;
+        }
+
+        function parseCharacterNames(value) {
+            return normalizeCharacterNames(
+                String(value || '').split(',')
+            );
+        }
+
+        function initializeState() {
+            if (
+                !state[STATE_NAMESPACE] ||
+                typeof state[STATE_NAMESPACE] !== 'object'
+            ) {
+                state[STATE_NAMESPACE] = {};
+            }
+
+            if (
+                !Array.isArray(
+                    state[STATE_NAMESPACE]
+                        .gmCharacterNames
+                )
+            ) {
+                state[STATE_NAMESPACE]
+                    .gmCharacterNames =
+                    normalizeCharacterNames(
+                        DEFAULT_GM_CHARACTER_NAMES
+                    );
+            } else {
+                state[STATE_NAMESPACE]
+                    .gmCharacterNames =
+                    normalizeCharacterNames(
+                        state[STATE_NAMESPACE]
+                            .gmCharacterNames
+                    );
+            }
+        }
+
+        function getGmCharacterNames() {
+            return state[STATE_NAMESPACE]
+                .gmCharacterNames;
+        }
+
+        function isAllowedGmCharacter(character) {
+            var characterName = String(
+                character.get('name') || ''
+            ).trim();
+
+            return getGmCharacterNames()
+                .indexOf(characterName) !== -1;
+        }
+
+        function updateGmCharacterNames(action, names) {
+            var currentNames = getGmCharacterNames();
+
+            if (action === '+') {
+                state[STATE_NAMESPACE]
+                    .gmCharacterNames =
+                    normalizeCharacterNames(
+                        currentNames.concat(names)
+                    );
+            } else {
+                state[STATE_NAMESPACE]
+                    .gmCharacterNames =
+                    currentNames.filter(function (name) {
+                        return names.indexOf(name) === -1;
+                    });
+            }
+        }
+
+        function showGmCharacterNamesResult(
+            orderAttribute,
+            action,
+            names
+        ) {
+            var actionLabel =
+                action === '+' ? '추가' : '삭제';
+
+            sendChat(
+                orderAttribute.label + ' 순서',
+                '/w gm GM 캐릭터 예외 명단 ' +
+                actionLabel + ': ' +
+                names.map(escapeTemplateText).join(', ')
+            );
         }
 
         function isPlayerControlled(character) {
@@ -265,7 +369,12 @@ on('ready', function () {
                         character.get('archived') !== true
                     );
                 })
-                .filter(isPlayerControlled)
+                .filter(function (character) {
+                    return (
+                        isPlayerControlled(character) ||
+                        isAllowedGmCharacter(character)
+                    );
+                })
                 .map(function (character, index) {
                     return getCharacterInfo(
                         character,
@@ -291,10 +400,20 @@ on('ready', function () {
                 return;
             }
 
-            var command = String(msg.content || '')
-                .trim()
-                .split(/\\s+/)[0]
-                .toLowerCase();
+            var content = String(msg.content || '')
+                .trim();
+
+            var manageCommandMatch =
+                content.match(MANAGE_COMMAND_PATTERN);
+
+            var command = manageCommandMatch
+                ? '!' +
+                    manageCommandMatch[1]
+                        .toLowerCase() +
+                    '-order'
+                : content
+                    .split(/\\s+/)[0]
+                    .toLowerCase();
 
             var orderAttribute =
                 findOrderAttribute(command);
@@ -310,6 +429,33 @@ on('ready', function () {
                     String(msg.who || '')
                         .replace(/"/g, '') +
                     '" 이 명령은 GM만 사용할 수 있습니다.'
+                );
+
+                return;
+            }
+
+            if (manageCommandMatch) {
+                var names = parseCharacterNames(
+                    manageCommandMatch[3]
+                );
+
+                if (names.length === 0) {
+                    sendChat(
+                        orderAttribute.label + ' 순서',
+                        '/w gm 캐릭터 이름을 입력하세요.'
+                    );
+
+                    return;
+                }
+
+                updateGmCharacterNames(
+                    manageCommandMatch[2],
+                    names
+                );
+                showGmCharacterNamesResult(
+                    orderAttribute,
+                    manageCommandMatch[2],
+                    names
                 );
 
                 return;
@@ -340,10 +486,12 @@ on('ready', function () {
         }
 
         return {
+            initializeState: initializeState,
             registerEventHandlers:
                 registerEventHandlers
         };
     }());
 
+    DexterityOrder.initializeState();
     DexterityOrder.registerEventHandlers();
 });`;
