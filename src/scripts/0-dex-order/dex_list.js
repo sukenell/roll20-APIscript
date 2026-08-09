@@ -21,6 +21,7 @@ on('ready', function () {
             }
         ];
         var SCRIPT_NAME = '특성치 순서';
+        var HANDOUT_NAME = '특성치 순서 명령어 안내';
         var STATE_NAMESPACE = 'AttributeOrder';
         var DEFAULT_ADDITIONAL_CHARACTER_NAMES = [];
         var ORDER_COMMAND_PATTERN =
@@ -54,6 +55,15 @@ on('ready', function () {
                 .replace(/{/g, '&#123;')
                 .replace(/}/g, '&#125;')
                 .replace(/=/g, '&#61;');
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function findOrderAttribute(command) {
@@ -129,6 +139,111 @@ on('ready', function () {
         function getAdditionalCharacterNames() {
             return state[STATE_NAMESPACE]
                 .additionalCharacterNames;
+        }
+
+        function buildHelpHandoutNotes() {
+            var commandItems = ORDER_ATTRIBUTES.map(
+                function (attribute) {
+                    return (
+                        '<li><strong>' +
+                        escapeHtml(attribute.label) +
+                        '</strong>: <code>' +
+                        escapeHtml(attribute.command) +
+                        '</code></li>'
+                    );
+                }
+            ).join('');
+
+            var additionalNames =
+                getAdditionalCharacterNames();
+
+            var additionalNamesContent =
+                additionalNames.length === 0
+                    ? '<p>현재 없음</p>'
+                    : '<ul>' +
+                        additionalNames.map(function (name) {
+                            return (
+                                '<li>' +
+                                escapeHtml(name) +
+                                '</li>'
+                            );
+                        }).join('') +
+                        '</ul>';
+
+            return (
+                '<h2>특성치 순서 명령어</h2>' +
+                '<ul>' + commandItems + '</ul>' +
+                '<h3>추가 캐릭터 명단</h3>' +
+                additionalNamesContent +
+                '<h3>명단 관리</h3>' +
+                '<p><code>' +
+                escapeHtml(
+                    '!dex-order+"철수, 짱구"'
+                ) +
+                '</code> 추가</p>' +
+                '<p><code>' +
+                escapeHtml(
+                    '!dex-order-"철수, 짱구"'
+                ) +
+                '</code> 삭제</p>' +
+                '<p>정신력과 건강 명령에도 같은 ' +
+                '+/- 형식을 사용할 수 있습니다.</p>'
+            );
+        }
+
+        function getOrCreateHelpHandout() {
+            var handoutId = state[STATE_NAMESPACE]
+                .handoutId;
+
+            var handout = handoutId
+                ? getObj('handout', handoutId)
+                : null;
+
+            if (!handout) {
+                handout = findObjs({
+                    _type: 'handout',
+                    name: HANDOUT_NAME
+                })[0];
+            }
+
+            if (!handout) {
+                handout = createObj('handout', {
+                    name: HANDOUT_NAME
+                });
+            }
+
+            if (handout) {
+                state[STATE_NAMESPACE]
+                    .handoutId = handout.id;
+            }
+
+            return handout;
+        }
+
+        function updateHelpHandout() {
+            try {
+                var handout = getOrCreateHelpHandout();
+
+                if (!handout) {
+                    throw new Error(
+                        '핸드아웃을 만들 수 없습니다.'
+                    );
+                }
+
+                handout.set(
+                    'notes',
+                    buildHelpHandoutNotes()
+                );
+            } catch (error) {
+                log(
+                    SCRIPT_NAME + ' 핸드아웃 오류: ' +
+                    (
+                        error && error.stack
+                            ? error.stack
+                            : error
+                    )
+                );
+            }
         }
 
         function isAdditionalCharacter(character) {
@@ -507,6 +622,7 @@ on('ready', function () {
             }
 
             try {
+                updateHelpHandout();
                 showOrder(orderAttribute);
             } catch (error) {
                 log(

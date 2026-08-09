@@ -25,10 +25,36 @@ function createCharacter(
   };
 }
 
-function createRoll20Sandbox({ characters = [], attributes = {}, savedState = {} } = {}) {
+function createHandout(id, name, notes = "") {
+  const values = { name, notes };
+
+  return {
+    id,
+    get(property, callback) {
+      const value = values[property];
+
+      if (callback) {
+        callback(value);
+      }
+
+      return value;
+    },
+    set(property, value) {
+      values[property] = value;
+    }
+  };
+}
+
+function createRoll20Sandbox({
+  characters = [],
+  attributes = {},
+  savedState = {},
+  handouts = []
+} = {}) {
   const handlers = {};
   const messages = [];
   const logs = [];
+  const createdObjects = [];
 
   const sandbox = {
     state: savedState,
@@ -41,9 +67,23 @@ function createRoll20Sandbox({ characters = [], attributes = {}, savedState = {}
       handlers[eventName] = callback;
     },
     findObjs(query) {
-      return query?._type === "character" ? characters : [];
+      if (query?._type === "character") {
+        return characters;
+      }
+
+      if (query?._type === "handout") {
+        return handouts.filter(
+          (handout) => !query.name || handout.get("name") === query.name
+        );
+      }
+
+      return [];
     },
     getObj(type, id) {
+      if (type === "handout") {
+        return handouts.find((handout) => handout.id === id);
+      }
+
       if (type !== "player") {
         return undefined;
       }
@@ -56,6 +96,23 @@ function createRoll20Sandbox({ characters = [], attributes = {}, savedState = {}
     getAttrByName(characterId, attributeName) {
       return attributes[characterId]?.[attributeName];
     },
+    createObj(type, objectAttributes) {
+      createdObjects.push({
+        type,
+        attributes: { ...objectAttributes }
+      });
+
+      if (type !== "handout") {
+        return undefined;
+      }
+
+      const handout = createHandout(
+        `handout-${handouts.length + 1}`,
+        objectAttributes.name
+      );
+      handouts.push(handout);
+      return handout;
+    },
     sendChat(who, content) {
       messages.push({ who, content });
     },
@@ -67,6 +124,8 @@ function createRoll20Sandbox({ characters = [], attributes = {}, savedState = {}
   vm.runInNewContext(DEX_LIST_CODE, sandbox);
 
   return {
+    createdObjects,
+    handouts,
     logs,
     messages,
     savedState,
@@ -325,6 +384,38 @@ test("legacy GM-name state migrates into the additional character list", () => {
   const output = roll20.messages.at(-1).content;
   assert.match(output, /철수/);
   assert.match(output, /짱구/);
+});
+
+test("an order command creates and populates the command handout", () => {
+  const roll20 = createRoll20Sandbox();
+
+  roll20.send("!pow-order");
+
+  assert.equal(roll20.handouts.length, 1);
+  const handout = roll20.handouts[0];
+  assert.equal(handout.get("name"), "특성치 순서 명령어 안내");
+  assert.equal(
+    roll20.savedState.AttributeOrder.handoutId,
+    handout.id
+  );
+  assert.deepEqual(roll20.createdObjects, [
+    {
+      type: "handout",
+      attributes: {
+        name: "특성치 순서 명령어 안내"
+      }
+    }
+  ]);
+
+  const notes = handout.get("notes");
+  assert.match(notes, /!dex-order/);
+  assert.match(notes, /!pow-order/);
+  assert.match(notes, /!con-order/);
+  assert.match(notes, /추가 캐릭터 명단/);
+  assert.match(notes, /!dex-order\+&quot;철수, 짱구&quot;/);
+  assert.match(notes, /!dex-order-&quot;철수, 짱구&quot;/);
+  assert.match(notes, /현재 없음/);
+  assert.match(roll20.messages.at(-1).content, /정신력 순서 확인/);
 });
 
 test("mixer metadata advertises all attribute order commands", () => {
