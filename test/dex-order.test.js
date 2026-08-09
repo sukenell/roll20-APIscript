@@ -429,10 +429,7 @@ test("an order command creates and populates the command handout", () => {
   assert.match(notes, /추가 캐릭터 명단/);
   assert.match(notes, /!dex-order\+&quot;이름1, 이름2&quot;/);
   assert.match(notes, /!dex-order-&quot;이름1, 이름2&quot;/);
-  assert.match(
-    notes,
-    /해당 데이터는 명령어에 따라 계속 갱신되며, 핸드아웃의 이름을 바꾸면 적용되지 않습니다\./
-  );
+  assert.doesNotMatch(notes, /핸드아웃의 이름을 바꾸면/);
   assert.match(notes, /현재 없음/);
   assert.match(roll20.messages.at(-1).content, /정신력 순서 확인/);
 });

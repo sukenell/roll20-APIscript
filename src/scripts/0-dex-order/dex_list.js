@@ -178,8 +178,6 @@ on('ready', function () {
                 '<h3>추가 캐릭터 명단</h3>' +
                 additionalNamesContent +
                 '<h3>명단 관리</h3>' +
-                '<p>해당 데이터는 명령어에 따라 계속 갱신되며, ' +
-                '핸드아웃의 이름을 바꾸면 적용되지 않습니다.</p>' +
                 '<p><code>' +
                 escapeHtml(
                     '!dex-order+"이름1, 이름2"'
