@@ -21,7 +21,9 @@ on('ready', function () {
             }
         ];
         var SCRIPT_NAME = '특성치 순서';
-        var HANDOUT_NAME = '특성치 순서 명령어 안내';
+        var HANDOUT_NAME = '특성치 순서 명령어';
+        var LEGACY_HANDOUT_NAME =
+            '특성치 순서 명령어 안내';
         var STATE_NAMESPACE = 'AttributeOrder';
         var DEFAULT_ADDITIONAL_CHARACTER_NAMES = [];
         var ORDER_COMMAND_PATTERN =
@@ -171,19 +173,21 @@ on('ready', function () {
                         '</ul>';
 
             return (
-                '<h2>특성치 순서 명령어</h2>' +
+                '<h3>특성치 순서 명령어</h3>' +
                 '<ul>' + commandItems + '</ul>' +
                 '<h3>추가 캐릭터 명단</h3>' +
                 additionalNamesContent +
                 '<h3>명단 관리</h3>' +
+                '<p>해당 데이터는 명령어에 따라 계속 갱신되며, ' +
+                '핸드아웃의 이름을 바꾸면 적용되지 않습니다.</p>' +
                 '<p><code>' +
                 escapeHtml(
-                    '!dex-order+"철수, 짱구"'
+                    '!dex-order+"이름1, 이름2"'
                 ) +
                 '</code> 추가</p>' +
                 '<p><code>' +
                 escapeHtml(
-                    '!dex-order-"철수, 짱구"'
+                    '!dex-order-"이름1, 이름2"'
                 ) +
                 '</code> 삭제</p>' +
                 '<p>정신력과 건강 명령에도 같은 ' +
@@ -210,6 +214,14 @@ on('ready', function () {
                 handout = createObj('handout', {
                     name: HANDOUT_NAME
                 });
+            }
+
+            if (
+                handout &&
+                handout.get('name') ===
+                    LEGACY_HANDOUT_NAME
+            ) {
+                handout.set('name', HANDOUT_NAME);
             }
 
             if (handout) {
@@ -272,21 +284,6 @@ on('ready', function () {
                         return names.indexOf(name) === -1;
                     });
             }
-        }
-
-        function showAdditionalCharacterNamesResult(
-            action,
-            names
-        ) {
-            var actionLabel =
-                action === '+' ? '추가' : '삭제';
-
-            sendChat(
-                SCRIPT_NAME,
-                '/w gm 추가 캐릭터 명단 ' +
-                actionLabel + ': ' +
-                names.map(escapeTemplateText).join(', ')
-            );
         }
 
         function showCommandUsage(orderAttribute) {
@@ -604,10 +601,6 @@ on('ready', function () {
                     names
                 );
                 updateHelpHandout();
-                showAdditionalCharacterNamesResult(
-                    manageCommandMatch[2],
-                    names
-                );
 
                 return;
             }

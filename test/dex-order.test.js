@@ -216,8 +216,7 @@ test("add command stores trimmed unique names in the shared allowlist", () => {
     Array.from(roll20.savedState.AttributeOrder.additionalCharacterNames),
     ["철수", "짱구"]
   );
-  assert.match(roll20.messages.at(-1).content, /추가 캐릭터 명단 추가/);
-  assert.doesNotMatch(roll20.messages.at(-1).content, /예외/);
+  assert.equal(roll20.messages.length, 0);
 
   roll20.send("!pow-order");
 
@@ -251,6 +250,7 @@ test("remove command deletes multiple names from the shared allowlist", () => {
     Array.from(roll20.savedState.AttributeOrder.additionalCharacterNames),
     []
   );
+  assert.equal(roll20.messages.length, 0);
 
   roll20.send("!con-order");
 
@@ -407,7 +407,7 @@ test("an order command creates and populates the command handout", () => {
 
   assert.equal(roll20.handouts.length, 1);
   const handout = roll20.handouts[0];
-  assert.equal(handout.get("name"), "특성치 순서 명령어 안내");
+  assert.equal(handout.get("name"), "특성치 순서 명령어");
   assert.equal(
     roll20.savedState.AttributeOrder.handoutId,
     handout.id
@@ -416,18 +416,23 @@ test("an order command creates and populates the command handout", () => {
     {
       type: "handout",
       attributes: {
-        name: "특성치 순서 명령어 안내"
+        name: "특성치 순서 명령어"
       }
     }
   ]);
 
   const notes = handout.get("notes");
+  assert.match(notes, /<h3>특성치 순서 명령어<\/h3>/);
   assert.match(notes, /!dex-order/);
   assert.match(notes, /!pow-order/);
   assert.match(notes, /!con-order/);
   assert.match(notes, /추가 캐릭터 명단/);
-  assert.match(notes, /!dex-order\+&quot;철수, 짱구&quot;/);
-  assert.match(notes, /!dex-order-&quot;철수, 짱구&quot;/);
+  assert.match(notes, /!dex-order\+&quot;이름1, 이름2&quot;/);
+  assert.match(notes, /!dex-order-&quot;이름1, 이름2&quot;/);
+  assert.match(
+    notes,
+    /해당 데이터는 명령어에 따라 계속 갱신되며, 핸드아웃의 이름을 바꾸면 적용되지 않습니다\./
+  );
   assert.match(notes, /현재 없음/);
   assert.match(roll20.messages.at(-1).content, /정신력 순서 확인/);
 });
@@ -458,7 +463,7 @@ test("list mutations keep one handout synchronized with current names", () => {
 test("an existing named handout is reused without changing its sharing", () => {
   const existingHandout = createHandout(
     "existing-handout",
-    "특성치 순서 명령어 안내",
+    "특성치 순서 명령어",
     "이전 내용",
     {
       inplayerjournals: "all",
@@ -481,6 +486,28 @@ test("an existing named handout is reused without changing its sharing", () => {
   assert.match(existingHandout.get("notes"), /!dex-order/);
   assert.equal(existingHandout.get("inplayerjournals"), "all");
   assert.equal(existingHandout.get("controlledby"), "player-1");
+});
+
+test("a stored legacy handout adopts the new default name", () => {
+  const legacyHandout = createHandout(
+    "legacy-handout",
+    "특성치 순서 명령어 안내"
+  );
+  const roll20 = createRoll20Sandbox({
+    handouts: [legacyHandout],
+    savedState: {
+      AttributeOrder: {
+        additionalCharacterNames: [],
+        handoutId: legacyHandout.id
+      }
+    }
+  });
+
+  roll20.send("!dex-order");
+
+  assert.equal(roll20.handouts.length, 1);
+  assert.equal(roll20.createdObjects.length, 0);
+  assert.equal(legacyHandout.get("name"), "특성치 순서 명령어");
 });
 
 test("a stored handout ID survives a handout rename", () => {
@@ -534,7 +561,7 @@ test("handout failures do not block order chat output", () => {
       handouts: [
         createHandout(
           "broken-handout",
-          "특성치 순서 명령어 안내",
+          "특성치 순서 명령어",
           "",
           { setError: new Error("set failed") }
         )
