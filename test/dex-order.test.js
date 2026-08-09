@@ -97,7 +97,7 @@ test("!pow-order sorts by Power and renders the Power label", () => {
   roll20.send("!pow-order");
 
   assert.equal(roll20.messages.length, 1);
-  assert.equal(roll20.messages[0].who, "정신력 순서");
+  assert.equal(roll20.messages[0].who, "");
   const output = roll20.messages[0].content;
   assert.match(output, /\{\{name=정신력 순서 확인\}\}/);
   assert.match(output, /\{\{짱구=정신력 80\}\}/);
@@ -140,9 +140,11 @@ test("add command stores trimmed unique names in the shared allowlist", () => {
   roll20.send('!dex-order+" 철수, 짱구, 철수, , "');
 
   assert.deepEqual(
-    Array.from(roll20.savedState.AttributeOrder.gmCharacterNames),
+    Array.from(roll20.savedState.AttributeOrder.additionalCharacterNames),
     ["철수", "짱구"]
   );
+  assert.match(roll20.messages.at(-1).content, /추가 캐릭터 명단 추가/);
+  assert.doesNotMatch(roll20.messages.at(-1).content, /예외/);
 
   roll20.send("!pow-order");
 
@@ -155,7 +157,7 @@ test("add command stores trimmed unique names in the shared allowlist", () => {
 test("remove command deletes multiple names from the shared allowlist", () => {
   const savedState = {
     AttributeOrder: {
-      gmCharacterNames: ["철수", "짱구"]
+      additionalCharacterNames: ["철수", "짱구"]
     }
   };
   const roll20 = createRoll20Sandbox({
@@ -173,7 +175,7 @@ test("remove command deletes multiple names from the shared allowlist", () => {
   roll20.send('!con-order-" 철수, 짱구 "');
 
   assert.deepEqual(
-    Array.from(roll20.savedState.AttributeOrder.gmCharacterNames),
+    Array.from(roll20.savedState.AttributeOrder.additionalCharacterNames),
     []
   );
 
@@ -192,9 +194,10 @@ test("non-GM players cannot change the allowlist", () => {
   });
 
   assert.deepEqual(
-    Array.from(roll20.savedState.AttributeOrder.gmCharacterNames),
+    Array.from(roll20.savedState.AttributeOrder.additionalCharacterNames),
     []
   );
+  assert.equal(roll20.messages.at(-1).who, "특성치 순서");
   assert.match(roll20.messages.at(-1).content, /GM만 사용할 수 있습니다/);
 });
 
@@ -220,19 +223,15 @@ test("!con-order sorts by Constitution and renders only the Health label", () =>
   assert.doesNotMatch(output, /민첩 순서|정신력 순서/);
 });
 
-test("every order result uses its selected attribute as the chat sender", () => {
-  const cases = [
-    ["!dex-order", "민첩 순서"],
-    ["!pow-order", "정신력 순서"],
-    ["!con-order", "건강 순서"]
-  ];
+test("order results omit a chat sender before the description", () => {
+  const commands = ["!dex-order", "!pow-order", "!con-order"];
 
-  cases.forEach(([command, sender]) => {
+  commands.forEach((command) => {
     const roll20 = createRoll20Sandbox();
 
     roll20.send(command);
 
-    assert.equal(roll20.messages.at(-1).who, sender);
+    assert.equal(roll20.messages.at(-1).who, "");
   });
 });
 
@@ -261,7 +260,7 @@ test("malformed allowlist syntax returns label-aware usage", () => {
   roll20.send('!con-order+"철수');
 
   assert.equal(roll20.messages.length, 1);
-  assert.equal(roll20.messages[0].who, "건강 순서");
+  assert.equal(roll20.messages[0].who, "특성치 순서");
   assert.match(roll20.messages[0].content, /사용법/);
   assert.match(roll20.messages[0].content, /!con-order\+"철수, 짱구"/);
 });
@@ -285,7 +284,7 @@ test("archived allowlisted characters stay excluded from an empty result", () =>
     },
     savedState: {
       AttributeOrder: {
-        gmCharacterNames: ["철수"]
+        additionalCharacterNames: ["철수"]
       }
     }
   });
@@ -295,6 +294,37 @@ test("archived allowlisted characters stay excluded from an empty result", () =>
   const output = roll20.messages.at(-1).content;
   assert.doesNotMatch(output, /철수/);
   assert.match(output, /현재 순서를 확인할 캐릭터가 없습니다/);
+});
+
+test("legacy GM-name state migrates into the additional character list", () => {
+  const savedState = {
+    AttributeOrder: {
+      gmCharacterNames: ["짱구"]
+    }
+  };
+  const roll20 = createRoll20Sandbox({
+    characters: [
+      createCharacter("player", "철수"),
+      createCharacter("unassigned", "짱구", "")
+    ],
+    attributes: {
+      player: { dex: 50 },
+      unassigned: { dex: 80 }
+    },
+    savedState
+  });
+
+  assert.deepEqual(
+    Array.from(savedState.AttributeOrder.additionalCharacterNames),
+    ["짱구"]
+  );
+  assert.equal(savedState.AttributeOrder.gmCharacterNames, undefined);
+
+  roll20.send("!dex-order");
+
+  const output = roll20.messages.at(-1).content;
+  assert.match(output, /철수/);
+  assert.match(output, /짱구/);
 });
 
 test("mixer metadata advertises all attribute order commands", () => {

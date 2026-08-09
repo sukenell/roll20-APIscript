@@ -20,8 +20,9 @@ on('ready', function () {
                 names: ['con']
             }
         ];
+        var SCRIPT_NAME = '특성치 순서';
         var STATE_NAMESPACE = 'AttributeOrder';
-        var DEFAULT_GM_CHARACTER_NAMES = [];
+        var DEFAULT_ADDITIONAL_CHARACTER_NAMES = [];
         var ORDER_COMMAND_PATTERN =
             /^!(dex|pow|con)-order(?=$|\\s|[+-]\\s*")/i;
         var MANAGE_COMMAND_PATTERN =
@@ -85,6 +86,8 @@ on('ready', function () {
         }
 
         function initializeState() {
+            var additionalCharacterNames;
+
             if (
                 !state[STATE_NAMESPACE] ||
                 typeof state[STATE_NAMESPACE] !== 'object'
@@ -92,61 +95,71 @@ on('ready', function () {
                 state[STATE_NAMESPACE] = {};
             }
 
+            additionalCharacterNames =
+                state[STATE_NAMESPACE]
+                    .additionalCharacterNames;
+
             if (
-                !Array.isArray(
+                !Array.isArray(additionalCharacterNames) &&
+                Array.isArray(
                     state[STATE_NAMESPACE]
                         .gmCharacterNames
                 )
             ) {
-                state[STATE_NAMESPACE]
-                    .gmCharacterNames =
-                    normalizeCharacterNames(
-                        DEFAULT_GM_CHARACTER_NAMES
-                    );
-            } else {
-                state[STATE_NAMESPACE]
-                    .gmCharacterNames =
-                    normalizeCharacterNames(
-                        state[STATE_NAMESPACE]
-                            .gmCharacterNames
-                    );
+                additionalCharacterNames =
+                    state[STATE_NAMESPACE]
+                        .gmCharacterNames;
             }
-        }
 
-        function getGmCharacterNames() {
-            return state[STATE_NAMESPACE]
+            if (!Array.isArray(additionalCharacterNames)) {
+                additionalCharacterNames =
+                    DEFAULT_ADDITIONAL_CHARACTER_NAMES;
+            }
+
+            state[STATE_NAMESPACE]
+                .additionalCharacterNames =
+                normalizeCharacterNames(
+                    additionalCharacterNames
+                );
+
+            delete state[STATE_NAMESPACE]
                 .gmCharacterNames;
         }
 
-        function isAllowedGmCharacter(character) {
+        function getAdditionalCharacterNames() {
+            return state[STATE_NAMESPACE]
+                .additionalCharacterNames;
+        }
+
+        function isAdditionalCharacter(character) {
             var characterName = String(
                 character.get('name') || ''
             ).trim();
 
-            return getGmCharacterNames()
+            return getAdditionalCharacterNames()
                 .indexOf(characterName) !== -1;
         }
 
-        function updateGmCharacterNames(action, names) {
-            var currentNames = getGmCharacterNames();
+        function updateAdditionalCharacterNames(action, names) {
+            var currentNames =
+                getAdditionalCharacterNames();
 
             if (action === '+') {
                 state[STATE_NAMESPACE]
-                    .gmCharacterNames =
+                    .additionalCharacterNames =
                     normalizeCharacterNames(
                         currentNames.concat(names)
                     );
             } else {
                 state[STATE_NAMESPACE]
-                    .gmCharacterNames =
+                    .additionalCharacterNames =
                     currentNames.filter(function (name) {
                         return names.indexOf(name) === -1;
                     });
             }
         }
 
-        function showGmCharacterNamesResult(
-            orderAttribute,
+        function showAdditionalCharacterNamesResult(
             action,
             names
         ) {
@@ -154,8 +167,8 @@ on('ready', function () {
                 action === '+' ? '추가' : '삭제';
 
             sendChat(
-                orderAttribute.label + ' 순서',
-                '/w gm GM 캐릭터 예외 명단 ' +
+                SCRIPT_NAME,
+                '/w gm 추가 캐릭터 명단 ' +
                 actionLabel + ': ' +
                 names.map(escapeTemplateText).join(', ')
             );
@@ -163,7 +176,7 @@ on('ready', function () {
 
         function showCommandUsage(orderAttribute) {
             sendChat(
-                orderAttribute.label + ' 순서',
+                SCRIPT_NAME,
                 '/w gm 사용법: ' +
                 orderAttribute.command +
                 ' 또는 ' +
@@ -387,7 +400,7 @@ on('ready', function () {
                 .filter(function (character) {
                     return (
                         isPlayerControlled(character) ||
-                        isAllowedGmCharacter(character)
+                        isAdditionalCharacter(character)
                     );
                 })
                 .map(function (character, index) {
@@ -401,7 +414,7 @@ on('ready', function () {
             var result = sortCharacters(characters);
 
             sendChat(
-                orderAttribute.label + ' 순서',
+                '',
                 buildTemplate(
                     result.characters,
                     result.showCombat,
@@ -447,7 +460,7 @@ on('ready', function () {
 
             if (!playerIsGM(msg.playerid)) {
                 sendChat(
-                    orderAttribute.label + ' 순서',
+                    SCRIPT_NAME,
                     '/w "' +
                     String(msg.who || '')
                         .replace(/"/g, '') +
@@ -464,19 +477,18 @@ on('ready', function () {
 
                 if (names.length === 0) {
                     sendChat(
-                        orderAttribute.label + ' 순서',
+                        SCRIPT_NAME,
                         '/w gm 캐릭터 이름을 입력하세요.'
                     );
 
                     return;
                 }
 
-                updateGmCharacterNames(
+                updateAdditionalCharacterNames(
                     manageCommandMatch[2],
                     names
                 );
-                showGmCharacterNamesResult(
-                    orderAttribute,
+                showAdditionalCharacterNamesResult(
                     manageCommandMatch[2],
                     names
                 );
@@ -507,7 +519,7 @@ on('ready', function () {
                 );
 
                 sendChat(
-                    orderAttribute.label + ' 순서',
+                    SCRIPT_NAME,
                     '/w gm 실행 중 오류가 발생했습니다. ' +
                     'API 콘솔을 확인하세요.'
                 );
