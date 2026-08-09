@@ -603,6 +603,7 @@ on('ready', function () {
                     manageCommandMatch[2],
                     names
                 );
+                updateHelpHandout();
                 showAdditionalCharacterNamesResult(
                     manageCommandMatch[2],
                     names

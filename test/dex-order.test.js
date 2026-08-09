@@ -418,6 +418,93 @@ test("an order command creates and populates the command handout", () => {
   assert.match(roll20.messages.at(-1).content, /정신력 순서 확인/);
 });
 
+test("list mutations keep one handout synchronized with current names", () => {
+  const roll20 = createRoll20Sandbox();
+
+  roll20.send('!dex-order+"철수 <b>, 짱구"');
+
+  assert.equal(roll20.handouts.length, 1);
+  const handout = roll20.handouts[0];
+  assert.match(handout.get("notes"), /철수 &lt;b&gt;/);
+  assert.doesNotMatch(handout.get("notes"), /철수 <b>/);
+  assert.match(handout.get("notes"), /짱구/);
+
+  roll20.send('!con-order-"철수 <b>"');
+
+  assert.equal(roll20.handouts.length, 1);
+  assert.equal(roll20.handouts[0], handout);
+  const currentNamesSection = handout
+    .get("notes")
+    .match(/<h3>추가 캐릭터 명단<\/h3>(.*?)<h3>명단 관리<\/h3>/)[1];
+  assert.doesNotMatch(currentNamesSection, /철수/);
+  assert.match(currentNamesSection, /짱구/);
+  assert.equal(roll20.createdObjects.length, 1);
+});
+
+test("an existing named handout is reused and remembered", () => {
+  const existingHandout = createHandout(
+    "existing-handout",
+    "특성치 순서 명령어 안내",
+    "이전 내용"
+  );
+  const roll20 = createRoll20Sandbox({
+    handouts: [existingHandout]
+  });
+
+  roll20.send("!dex-order");
+
+  assert.equal(roll20.handouts.length, 1);
+  assert.equal(roll20.createdObjects.length, 0);
+  assert.equal(
+    roll20.savedState.AttributeOrder.handoutId,
+    existingHandout.id
+  );
+  assert.doesNotMatch(existingHandout.get("notes"), /이전 내용/);
+  assert.match(existingHandout.get("notes"), /!dex-order/);
+});
+
+test("a stored handout ID survives a handout rename", () => {
+  const renamedHandout = createHandout(
+    "saved-handout",
+    "내가 바꾼 이름"
+  );
+  const roll20 = createRoll20Sandbox({
+    handouts: [renamedHandout],
+    savedState: {
+      AttributeOrder: {
+        additionalCharacterNames: ["짱구"],
+        handoutId: renamedHandout.id
+      }
+    }
+  });
+
+  roll20.send("!pow-order");
+
+  assert.equal(roll20.handouts.length, 1);
+  assert.equal(roll20.createdObjects.length, 0);
+  assert.equal(renamedHandout.get("name"), "내가 바꾼 이름");
+  assert.match(renamedHandout.get("notes"), /짱구/);
+});
+
+test("a missing stored handout is recreated on the next order command", () => {
+  const roll20 = createRoll20Sandbox({
+    savedState: {
+      AttributeOrder: {
+        additionalCharacterNames: [],
+        handoutId: "deleted-handout"
+      }
+    }
+  });
+
+  roll20.send("!con-order");
+
+  assert.equal(roll20.handouts.length, 1);
+  assert.notEqual(
+    roll20.savedState.AttributeOrder.handoutId,
+    "deleted-handout"
+  );
+});
+
 test("mixer metadata advertises all attribute order commands", () => {
   assert.match(dexOrderModule.title, /특성치/);
   assert.match(dexOrderModule.command, /!dex-order/);
@@ -426,4 +513,6 @@ test("mixer metadata advertises all attribute order commands", () => {
   assert.match(dexOrderModule.description, /민첩/);
   assert.match(dexOrderModule.description, /정신력/);
   assert.match(dexOrderModule.description, /건강/);
+  assert.match(dexOrderModule.description, /추가 캐릭터/);
+  assert.match(dexOrderModule.description, /핸드아웃/);
 });
