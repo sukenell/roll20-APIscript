@@ -25,8 +25,13 @@ function createCharacter(
   };
 }
 
-function createHandout(id, name, notes = "") {
-  const values = { name, notes };
+function createHandout(id, name, notes = "", options = {}) {
+  const values = {
+    name,
+    notes,
+    inplayerjournals: options.inplayerjournals || "",
+    controlledby: options.controlledby || ""
+  };
 
   return {
     id,
@@ -40,6 +45,10 @@ function createHandout(id, name, notes = "") {
       return value;
     },
     set(property, value) {
+      if (options.setError) {
+        throw options.setError;
+      }
+
       values[property] = value;
     }
   };
@@ -49,7 +58,8 @@ function createRoll20Sandbox({
   characters = [],
   attributes = {},
   savedState = {},
-  handouts = []
+  handouts = [],
+  createHandoutError
 } = {}) {
   const handlers = {};
   const messages = [];
@@ -97,6 +107,10 @@ function createRoll20Sandbox({
       return attributes[characterId]?.[attributeName];
     },
     createObj(type, objectAttributes) {
+      if (type === "handout" && createHandoutError) {
+        throw createHandoutError;
+      }
+
       createdObjects.push({
         type,
         attributes: { ...objectAttributes }
@@ -441,11 +455,15 @@ test("list mutations keep one handout synchronized with current names", () => {
   assert.equal(roll20.createdObjects.length, 1);
 });
 
-test("an existing named handout is reused and remembered", () => {
+test("an existing named handout is reused without changing its sharing", () => {
   const existingHandout = createHandout(
     "existing-handout",
     "특성치 순서 명령어 안내",
-    "이전 내용"
+    "이전 내용",
+    {
+      inplayerjournals: "all",
+      controlledby: "player-1"
+    }
   );
   const roll20 = createRoll20Sandbox({
     handouts: [existingHandout]
@@ -461,6 +479,8 @@ test("an existing named handout is reused and remembered", () => {
   );
   assert.doesNotMatch(existingHandout.get("notes"), /이전 내용/);
   assert.match(existingHandout.get("notes"), /!dex-order/);
+  assert.equal(existingHandout.get("inplayerjournals"), "all");
+  assert.equal(existingHandout.get("controlledby"), "player-1");
 });
 
 test("a stored handout ID survives a handout rename", () => {
@@ -505,6 +525,32 @@ test("a missing stored handout is recreated on the next order command", () => {
   );
 });
 
+test("handout failures do not block order chat output", () => {
+  const failures = [
+    createRoll20Sandbox({
+      createHandoutError: new Error("create failed")
+    }),
+    createRoll20Sandbox({
+      handouts: [
+        createHandout(
+          "broken-handout",
+          "특성치 순서 명령어 안내",
+          "",
+          { setError: new Error("set failed") }
+        )
+      ]
+    })
+  ];
+
+  failures.forEach((roll20) => {
+    roll20.send("!dex-order");
+
+    assert.equal(roll20.messages.at(-1).who, "");
+    assert.match(roll20.messages.at(-1).content, /민첩 순서 확인/);
+    assert.match(roll20.logs.at(-1), /핸드아웃 오류/);
+  });
+});
+
 test("mixer metadata advertises all attribute order commands", () => {
   assert.match(dexOrderModule.title, /특성치/);
   assert.match(dexOrderModule.command, /!dex-order/);
@@ -515,4 +561,5 @@ test("mixer metadata advertises all attribute order commands", () => {
   assert.match(dexOrderModule.description, /건강/);
   assert.match(dexOrderModule.description, /추가 캐릭터/);
   assert.match(dexOrderModule.description, /핸드아웃/);
+  assert.match(dexOrderModule.description, /전투 기능치/);
 });
