@@ -7,7 +7,6 @@ const state = {
 const elements = {
   codePreview: document.querySelector("#code-preview"),
   copyCode: document.querySelector("#copy-code"),
-  copyStatus: document.querySelector("#copy-status"),
   moduleList: document.querySelector("#module-list"),
   previewMeta: document.querySelector("#preview-meta")
 };
@@ -25,9 +24,8 @@ elements.copyCode.addEventListener("click", async () => {
       copyWithFallback(code);
     }
 
-    setCopyStatus("복사됨");
-  } catch {
-    setCopyStatus("복사 실패");
+  } catch (error) {
+    console.error("코드 복사 실패", error);
   }
 });
 
@@ -80,14 +78,6 @@ function renderPreview() {
   elements.previewMeta.textContent = `${selectedCount} ${
     selectedCount === 1 ? "module" : "modules"
   }`;
-}
-
-function setCopyStatus(value) {
-  elements.copyStatus.textContent = value;
-  window.clearTimeout(setCopyStatus.timer);
-  setCopyStatus.timer = window.setTimeout(() => {
-    elements.copyStatus.textContent = "";
-  }, 1400);
 }
 
 function copyWithFallback(text) {

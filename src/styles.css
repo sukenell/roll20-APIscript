@@ -73,25 +73,6 @@ h2 {
   line-height: 1.2;
 }
 
-.copy-status {
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #cfd7dd;
-  border-radius: 999px;
-  color: #2d5d48;
-  display: inline-flex;
-  font-size: 0.88rem;
-  font-weight: 800;
-  min-height: 36px;
-  min-width: 1px;
-  padding: 0 14px;
-  white-space: nowrap;
-}
-
-.copy-status:empty {
-  display: none;
-}
-
 .copy-button {
   background: #373d49;
   border: 0;
