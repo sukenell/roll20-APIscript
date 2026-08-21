@@ -11,6 +11,19 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -53,6 +66,7 @@ button {
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
+  line-height: normal;
   margin: 0 0 5px;
   text-transform: none;
 }
@@ -132,9 +146,10 @@ h2 {
   padding: 0 16px;
 }
 
-.preview-toolbar strong {
+.preview-toolbar h2 {
   font-size: 0.88rem;
   letter-spacing: 0.04em;
+  line-height: normal;
 }
 
 .preview-toolbar span {

@@ -7,6 +7,7 @@ const state = {
 const elements = {
   codePreview: document.querySelector("#code-preview"),
   copyCode: document.querySelector("#copy-code"),
+  copyStatus: document.querySelector("#copy-status"),
   moduleList: document.querySelector("#module-list"),
   previewMeta: document.querySelector("#preview-meta")
 };
@@ -24,7 +25,9 @@ elements.copyCode.addEventListener("click", async () => {
       copyWithFallback(code);
     }
 
+    elements.copyStatus.replaceChildren("코드가 복사되었습니다.");
   } catch (error) {
+    elements.copyStatus.replaceChildren("코드를 복사하지 못했습니다.");
     console.error("코드 복사 실패", error);
   }
 });
@@ -35,11 +38,14 @@ function renderModuleList() {
     row.className = "module-row";
 
     const titleId = `module-${module.id}-title`;
+    const descriptionId = `module-${module.id}-description`;
+    const commandId = `module-${module.id}-command`;
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = Boolean(state.selected[module.id]);
     checkbox.setAttribute("aria-labelledby", titleId);
+    checkbox.setAttribute("aria-describedby", `${descriptionId} ${commandId}`);
     checkbox.addEventListener("change", () => {
       state.selected = {
         ...state.selected,
@@ -56,9 +62,11 @@ function renderModuleList() {
     titleLine.textContent = module.title;
 
     const description = document.createElement("small");
+    description.id = descriptionId;
     description.textContent = module.description;
 
     const command = document.createElement("code");
+    command.id = commandId;
     command.textContent = module.command;
 
     text.append(titleLine, description, command);
@@ -81,6 +89,7 @@ function renderPreview() {
 }
 
 function copyWithFallback(text) {
+  const previousFocus = document.activeElement;
   const field = document.createElement("textarea");
   field.value = text;
   field.setAttribute("readonly", "");
@@ -88,7 +97,15 @@ function copyWithFallback(text) {
   field.style.inset = "0 auto auto 0";
   field.style.opacity = "0";
   document.body.append(field);
-  field.select();
-  document.execCommand("copy");
-  field.remove();
+  try {
+    field.select();
+    if (document.execCommand("copy") === false) {
+      throw new Error("Fallback copy command failed");
+    }
+  } finally {
+    field.remove();
+    if (previousFocus?.isConnected && typeof previousFocus.focus === "function") {
+      previousFocus.focus();
+    }
+  }
 }

@@ -12,34 +12,41 @@
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Roll20 API script by nell</p>
+          <h1 class="eyebrow" lang="en">Roll20 API script by nell</h1>
         </div>
       </header>
 
       <div class="workspace">
-        <aside class="module-panel" aria-label="선택 가능한 스크립트">
+        <section class="module-panel" aria-labelledby="module-heading">
+          <h2 class="sr-only" id="module-heading">선택 가능한 스크립트</h2>
           <div class="module-list" id="module-list"></div>
-        </aside>
+        </section>
 
-        <section class="preview-panel" aria-label="코드 프리뷰">
+        <section class="preview-panel" aria-labelledby="preview-heading">
           <div class="preview-toolbar">
-            <strong>R20 API</strong>
-            <span>LIVE PREVIEW</span>
+            <h2 id="preview-heading" lang="en">R20 API</h2>
+            <span lang="en">LIVE PREVIEW</span>
           </div>
           <div class="preview-document-bar">
-            <strong>roll20-api.js</strong>
-            <output id="preview-meta">0 modules</output>
+            <strong lang="en">roll20-api.js</strong>
+            <output id="preview-meta" lang="en">0 modules</output>
           </div>
           <textarea
             class="code-preview"
             id="code-preview"
             aria-label="생성된 Roll20 API 코드"
-            aria-live="polite"
             readonly
             spellcheck="false"
           ></textarea>
           <div class="preview-actions">
             <button class="copy-button" id="copy-code" type="button">복사</button>
+            <output
+              class="sr-only"
+              id="copy-status"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></output>
           </div>
         </section>
       </div>
