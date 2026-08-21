@@ -277,6 +277,10 @@ h2 {
 }
 
 @media (max-width: 980px) {
+  body {
+    min-width: 0;
+  }
+
   .app-shell {
     height: auto;
     min-height: 100vh;

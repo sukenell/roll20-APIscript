@@ -119,6 +119,14 @@ test("the stacked layout expands instead of clipping content at narrow widths", 
   );
 });
 
+test("the body can shrink when a narrow viewport gains a vertical scrollbar", () => {
+  const responsiveStart = styles.indexOf("@media (max-width: 980px)");
+  const responsiveEnd = styles.indexOf("@media (max-width: 680px)");
+  const responsiveStyles = styles.slice(responsiveStart, responsiveEnd);
+
+  assert.equal(declaration(ruleBody(responsiveStyles, "body"), "min-width"), "0");
+});
+
 test("long module commands wrap within their grid column", () => {
   assert.equal(declaration(ruleBody(styles, ".module-copy"), "min-width"), "0");
 
