@@ -7,6 +7,38 @@ const [html, styles] = await Promise.all([
   readFile(new URL("../src/styles.css", import.meta.url), "utf8")
 ]);
 
+function ruleBody(source, selector) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = source.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  assert.ok(match, `CSS rule not found: ${selector}`);
+  return match[1];
+}
+
+function declaration(rule, property) {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return rule.match(new RegExp(`${escapedProperty}:\\s*([^;]+);`))?.[1].trim();
+}
+
+function contrastRatio(foreground, background) {
+  const luminance = (hex) => {
+    const channels = hex
+      .slice(1)
+      .match(/.{2}/g)
+      .map((channel) => Number.parseInt(channel, 16) / 255)
+      .map((channel) =>
+        channel <= 0.04045
+          ? channel / 12.92
+          : ((channel + 0.055) / 1.055) ** 2.4
+      );
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+
+  const [lighter, darker] = [luminance(foreground), luminance(background)].sort(
+    (a, b) => b - a
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test("existing labels provide a native heading structure without changing their text", () => {
   assert.match(
     html,
@@ -50,6 +82,115 @@ test("promoted headings retain the original text metrics", () => {
     styles.match(/\.preview-toolbar h2\s*\{[\s\S]*?\}/)?.[0] ?? "";
   assert.match(eyebrowRule, /line-height:\s*normal;/);
   assert.match(toolbarHeadingRule, /line-height:\s*normal;/);
+});
+
+test("the stacked layout expands instead of clipping content at narrow widths", () => {
+  const responsiveStart = styles.indexOf("@media (max-width: 980px)");
+  const responsiveEnd = styles.indexOf("@media (max-width: 680px)");
+  assert.ok(responsiveStart >= 0 && responsiveEnd > responsiveStart);
+  const responsiveStyles = styles.slice(responsiveStart, responsiveEnd);
+
+  const shellRule = ruleBody(responsiveStyles, ".app-shell");
+  assert.equal(declaration(shellRule, "height"), "auto");
+  assert.deepEqual(
+    [...shellRule.matchAll(/min-height:\s*(100d?vh);/g)].map((match) => match[1]),
+    ["100vh", "100dvh"]
+  );
+  assert.equal(declaration(shellRule, "overflow"), "visible");
+
+  const workspaceRule = ruleBody(responsiveStyles, ".workspace");
+  assert.equal(declaration(workspaceRule, "grid-template-columns"), "1fr");
+  assert.equal(declaration(workspaceRule, "grid-template-rows"), "auto auto");
+
+  const modulePanelRule = ruleBody(responsiveStyles, ".module-panel");
+  assert.equal(declaration(modulePanelRule, "max-height"), "none");
+  assert.equal(declaration(modulePanelRule, "overflow"), "visible");
+  assert.equal(
+    declaration(ruleBody(responsiveStyles, ".module-list"), "overflow"),
+    "visible"
+  );
+  assert.equal(
+    declaration(ruleBody(responsiveStyles, ".preview-panel"), "overflow"),
+    "visible"
+  );
+  assert.equal(
+    declaration(ruleBody(responsiveStyles, ".code-preview"), "min-height"),
+    "18rem"
+  );
+});
+
+test("long module commands wrap within their grid column", () => {
+  assert.equal(declaration(ruleBody(styles, ".module-copy"), "min-width"), "0");
+
+  const codeRule = ruleBody(styles, ".module-copy code");
+  assert.equal(declaration(codeRule, "overflow-wrap"), "anywhere");
+  assert.equal(declaration(codeRule, "white-space"), "normal");
+  assert.equal(declaration(codeRule, "width"), "auto");
+});
+
+test("preview metadata keeps at least 4.5 to 1 text contrast", () => {
+  const color = declaration(ruleBody(styles, ".preview-document-bar output"), "color");
+  const ratio = contrastRatio(color, "#ffffff");
+  assert.ok(ratio >= 4.5, `metadata contrast was ${ratio.toFixed(2)}:1`);
+});
+
+test("focus-visible indicators use outlines with at least 3 to 1 contrast", () => {
+  const outlineColor = (rule) =>
+    rule.match(/outline:\s*\d+px\s+solid\s+(#[0-9a-f]{6});/i)?.[1];
+
+  const hoverRule = ruleBody(styles, ".copy-button:hover");
+  assert.equal(declaration(hoverRule, "background"), "#35d7bb");
+  assert.equal(declaration(hoverRule, "color"), "#2b2f36");
+
+  const copyFocusRule = ruleBody(styles, ".copy-button:focus-visible");
+  const copyOutline = outlineColor(copyFocusRule);
+  const copyBackground = declaration(copyFocusRule, "background");
+  assert.ok(
+    contrastRatio(copyOutline, copyBackground) >= 3,
+    "copy focus outline must contrast with its focused background"
+  );
+  assert.match(copyFocusRule, /outline-offset:\s*-\d+px;/);
+
+  const previewRule = ruleBody(styles, ".code-preview");
+  const previewFocusRule = ruleBody(styles, ".code-preview:focus-visible");
+  assert.ok(
+    contrastRatio(outlineColor(previewFocusRule), declaration(previewRule, "background")) >= 3,
+    "preview focus outline must contrast with the textarea background"
+  );
+  assert.match(previewFocusRule, /outline-offset:\s*-\d+px;/);
+
+  const checkboxFocusRule = ruleBody(styles, ".module-row input:focus-visible");
+  assert.ok(
+    contrastRatio(
+      outlineColor(checkboxFocusRule),
+      declaration(ruleBody(styles, ":root"), "background")
+    ) >= 3,
+    "checkbox focus outline must contrast with the page background"
+  );
+
+  assert.doesNotMatch(styles, /outline:\s*none;/);
+  for (const focusRule of [copyFocusRule, previewFocusRule, checkboxFocusRule]) {
+    assert.doesNotMatch(focusRule, /box-shadow:/);
+  }
+});
+
+test("forced-colors mode gives every interactive control a system-color outline", () => {
+  const forcedColorsStart = styles.indexOf("@media (forced-colors: active)");
+  assert.ok(forcedColorsStart >= 0, "forced-colors override is required");
+  const forcedColorsStyles = styles.slice(forcedColorsStart);
+
+  for (const selector of [
+    ".copy-button:focus-visible",
+    ".module-row input:focus-visible",
+    ".code-preview:focus-visible"
+  ]) {
+    assert.ok(forcedColorsStyles.includes(selector), `${selector} needs an override`);
+  }
+  assert.match(
+    forcedColorsStyles,
+    /outline:\s*\d+px\s+solid\s+(?:Highlight|CanvasText);/
+  );
+  assert.doesNotMatch(forcedColorsStyles, /forced-color-adjust:\s*none;/);
 });
 
 test("copy feedback is permanently present for assistive technology only", () => {
